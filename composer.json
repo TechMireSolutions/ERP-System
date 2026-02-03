@@ -1,19 +1,15 @@
 {
-	"description": "The CodeIgniter framework",
-	"name": "codeigniter/framework",
-	"type": "project",
-	"homepage": "http://codeigniter.com",
-	"license": "MIT",
-	"support": {
-		"forum": "http://forum.codeigniter.com/",
-		"wiki": "https://github.com/bcit-ci/CodeIgniter/wiki",
-		"irc": "irc://irc.freenode.net/codeigniter",
-		"source": "https://github.com/bcit-ci/CodeIgniter"
-	},
-	"require": {
-		"php": ">=5.2.4"
-	},
-	"require-dev": {
-		"mikey179/vfsStream": "1.1.*"
-	}
+    "name": "codeigniter/framework",
+    "description": "The CodeIgniter framework",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "jmrashed/zkteco-lib": "^1.1",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "config": {
+        "allow-plugins": {
+            "kylekatarnls/update-helper": true
+        }
+    }
 }
