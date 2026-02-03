@@ -286,4 +286,84 @@ class Zke extends MY_Controller
         $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
     }
+    public function get_live_stats()
+    {
+        header('Content-Type: application/json');
+
+        $cacheDir = FCPATH . 'uploads/attendance/';
+        $usersFile = $cacheDir . 'users.json';
+        $attendanceFile = $cacheDir . 'attendance.json';
+
+        if (!file_exists($usersFile) || !file_exists($attendanceFile)) {
+            echo json_encode(['success' => false, 'message' => 'No data found. Sync first.']);
+            return;
+        }
+
+        $users = json_decode(file_get_contents($usersFile), true);
+        $attendance_logs = json_decode(file_get_contents($attendanceFile), true);
+
+        // Map User IDs to Names
+        $userMap = [];
+        foreach ($users as $u) {
+            $uid = $u['userid'] ?? $u['uid'] ?? $u['id'];
+            $userMap[$uid] = $u['name'];
+        }
+
+        $today = date('Y-m-d');
+        // For testing, if today has no data, you might want to look at the last available date, 
+        // but "Live" implies Today. We will stick to Today.
+        
+        $present_users = [];
+        $latest_punch = null;
+        $latest_timestamp = 0;
+
+        foreach ($attendance_logs as $log) {
+            // Check key variations again
+            $timestamp = $log['timestamp'] ?? $log['time'] ?? $log['datetime'];
+            $logDate = date('Y-m-d', strtotime($timestamp));
+
+            if ($logDate === $today) {
+                $uid = $log['id'];
+                
+                // Track Unique Present Users
+                if (!isset($present_users[$uid])) {
+                    $present_users[$uid] = [
+                        'name' => $userMap[$uid] ?? 'Unknown (ID:'.$uid.')',
+                        'first_punch' => $timestamp,
+                        'last_punch' => $timestamp
+                    ];
+                } else {
+                    // Update last punch
+                    if ($timestamp > $present_users[$uid]['last_punch']) {
+                        $present_users[$uid]['last_punch'] = $timestamp;
+                    }
+                     // Update first punch (should be earliest)
+                    if ($timestamp < $present_users[$uid]['first_punch']) {
+                        $present_users[$uid]['first_punch'] = $timestamp;
+                    }
+                }
+
+                // Track Global Latest Punch
+                $ts = strtotime($timestamp);
+                if ($ts > $latest_timestamp) {
+                    $latest_timestamp = $ts;
+                    $latest_punch = [
+                        'name' => $userMap[$uid] ?? 'Unknown',
+                        'time' => date('h:i A', $ts),
+                        'id' => $uid
+                    ];
+                }
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'stats' => [
+                'total_users' => count($users),
+                'present_count' => count($present_users),
+                'latest_punch' => $latest_punch,
+                'present_list' => array_values($present_users)
+            ]
+        ]);
+    }
 }
