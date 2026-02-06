@@ -78,11 +78,7 @@ class Zke extends MY_Controller
         if ($zk->connect()) {
             try {
                 // 1. Fetch Users
-                $users = $zk->getUser(); // Library method might differ, checking generic usage
-                // Note: The original code used Jmrashed\Zkteco\Lib\Helper\User::get($zk)
-                // We'll use the direct library object if possible or the helper if installed.
-                // Assuming standard ZKTeco lib usage:
-
+                $users = $zk->getUser();
                 // 2. Fetch Attendance
                 $attendance_logs = $zk->getAttendance();
 
@@ -179,7 +175,7 @@ class Zke extends MY_Controller
         // Process Data (Similar to original export.php)
         $groupedData = [];
         $sample = reset($attendance_logs);
-        // ZKTeco lib usually checks specific keys, check logic
+        // ZKTeco lib usually checks specific keys
         $timeKey = isset($sample['timestamp']) ? 'timestamp' : (isset($sample['time']) ? 'time' : 'datetime');
 
         foreach ($attendance_logs as $log) {
@@ -310,25 +306,22 @@ class Zke extends MY_Controller
         }
 
         $today = date('Y-m-d');
-        // For testing, if today has no data, you might want to look at the last available date, 
-        // but "Live" implies Today. We will stick to Today.
-        
+
         $present_users = [];
         $latest_punch = null;
         $latest_timestamp = 0;
 
         foreach ($attendance_logs as $log) {
-            // Check key variations again
             $timestamp = $log['timestamp'] ?? $log['time'] ?? $log['datetime'];
             $logDate = date('Y-m-d', strtotime($timestamp));
 
             if ($logDate === $today) {
                 $uid = $log['id'];
-                
+
                 // Track Unique Present Users
                 if (!isset($present_users[$uid])) {
                     $present_users[$uid] = [
-                        'name' => $userMap[$uid] ?? 'Unknown (ID:'.$uid.')',
+                        'name' => $userMap[$uid] ?? 'Unknown (ID:' . $uid . ')',
                         'first_punch' => $timestamp,
                         'last_punch' => $timestamp
                     ];
@@ -337,7 +330,7 @@ class Zke extends MY_Controller
                     if ($timestamp > $present_users[$uid]['last_punch']) {
                         $present_users[$uid]['last_punch'] = $timestamp;
                     }
-                     // Update first punch (should be earliest)
+                    // Update first punch
                     if ($timestamp < $present_users[$uid]['first_punch']) {
                         $present_users[$uid]['first_punch'] = $timestamp;
                     }
